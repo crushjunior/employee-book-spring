@@ -5,6 +5,7 @@ import com.skypro.employeebookspring.record.EmployeeRequest;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class EmployeeService {
@@ -38,55 +39,18 @@ public class EmployeeService {
     }
 
     public Employee getSalaryMin() {
-        int minSalary = Integer.MAX_VALUE;
-        Employee employeeWithMinSalary = null;
-        for (Map.Entry<Integer, Employee> employee : employees.entrySet()){
-            if (employee != null) {
-                if (minSalary > employee.getValue().getSalary()) {
-                    minSalary = employee.getValue().getSalary();
-                    employeeWithMinSalary = employee.getValue();
-                }
-            }
-        }
-        if (employeeWithMinSalary != null) {
-            return employeeWithMinSalary;
-        } else {
-            return null;
-        }
+        var minSalary = employees.values().stream().mapToInt(Employee::getSalary).min().getAsInt();
+        return employees.values().stream().filter(e -> e.getSalary() == minSalary).findAny().get();
     }
 
     public Employee getSalaryMax() {
-        int maxSalary = Integer.MIN_VALUE;
-        Employee employeeWithMaxSalary = null;
-        for (Map.Entry<Integer, Employee> employee : employees.entrySet()){
-            if (employee != null) {
-                if (maxSalary < employee.getValue().getSalary()) {
-                    maxSalary = employee.getValue().getSalary();
-                    employeeWithMaxSalary = employee.getValue();
-                }
-            }
-        }
-        if (employeeWithMaxSalary != null) {
-            return employeeWithMaxSalary;
-        } else {
-            return null;
-        }
+        var maxSalary = employees.values().stream().mapToInt(Employee::getSalary).max().getAsInt();
+        return employees.values().stream().filter(e -> e.getSalary() == maxSalary).findAny().get();
     }
 
     public List<Employee> getSalaryMoreMedium() {
-        int medium = 0;
-        for (Map.Entry<Integer, Employee> employee : employees.entrySet()) {
-            if (employee != null) {
-                medium += employee.getValue().getSalary();
-            }
-        }
-        medium /= employees.size();
-        List<Employee> employeesWithMoreMediumSalary = new ArrayList<>();
-        for (Map.Entry<Integer, Employee> employee : employees.entrySet()) {
-            if (employee.getValue().getSalary() >= medium) {
-                employeesWithMoreMediumSalary.add(employee.getValue());
-            }
-        }
-        return employeesWithMoreMediumSalary;
+        var mediumSalary = employees.values().stream().mapToInt(Employee::getSalary).average().getAsDouble();
+        return employees.values().stream().filter(e -> e.getSalary() >= mediumSalary).collect(Collectors.toList());
     }
+
 }
