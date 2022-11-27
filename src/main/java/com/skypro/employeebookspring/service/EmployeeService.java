@@ -1,8 +1,13 @@
 package com.skypro.employeebookspring.service;
 
+
+import com.skypro.employeebookspring.exception.EmployeeNotFoundException;
+import com.skypro.employeebookspring.exception.InvalidEmployeeRequestException;
 import com.skypro.employeebookspring.model.Employee;
 import com.skypro.employeebookspring.record.EmployeeRequest;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
+
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -15,16 +20,14 @@ public class EmployeeService {
         return this.employees.values();
     }
 
-    public void addEmployee() {
-
-    }
 
     public Employee addEmployee(EmployeeRequest employeeRequest) {
-        if (employeeRequest.getFirstName() == null || employeeRequest.getLastName() == null) {
-            throw new IllegalArgumentException("Employee's name should be set");
+        if (!StringUtils.isAlpha(employeeRequest.getFirstName()) || !StringUtils.isAlpha(employeeRequest.getLastName())) {
+            throw new InvalidEmployeeRequestException();
         }
-        Employee employee = new Employee(employeeRequest.getFirstName(),
-                employeeRequest.getLastName(),
+        Employee employee = new Employee(
+                StringUtils.capitalize(employeeRequest.getFirstName()),
+                StringUtils.capitalize(employeeRequest.getLastName()),
                 employeeRequest.getDepartment(),
                 employeeRequest.getSalary());
         this.employees.put(employee.getId(), employee);
@@ -38,19 +41,35 @@ public class EmployeeService {
                 .sum();
     }
 
-    public Employee getSalaryMin() {
-        var minSalary = employees.values().stream().mapToInt(Employee::getSalary).min().getAsInt();
-        return employees.values().stream().filter(e -> e.getSalary() == minSalary).findAny().get();
+    public Employee getEmployeeWithSalaryMin() {
+        return employees.values().stream()
+                .min(Comparator.comparingInt(Employee::getSalary))
+                .orElseThrow(EmployeeNotFoundException::new);
     }
 
-    public Employee getSalaryMax() {
-        var maxSalary = employees.values().stream().mapToInt(Employee::getSalary).max().getAsInt();
-        return employees.values().stream().filter(e -> e.getSalary() == maxSalary).findAny().get();
+    public Employee getEmployeeWithSalaryMax() {
+        return employees.values().stream()
+                .max(Comparator.comparingInt(Employee::getSalary))
+                .orElseThrow(EmployeeNotFoundException::new);
     }
 
-    public List<Employee> getSalaryMoreMedium() {
-        var mediumSalary = employees.values().stream().mapToInt(Employee::getSalary).average().getAsDouble();
-        return employees.values().stream().filter(e -> e.getSalary() >= mediumSalary).collect(Collectors.toList());
+    private Double getAverageSalary() {
+        return employees.values().stream()
+                .mapToDouble(Employee::getSalary).average().orElse(0D);
+    }
+
+    public List<Employee> getEmployeeWithSalaryMoreAverage() {
+        var averageSalary = getAverageSalary();
+        if (averageSalary == null) {
+            return Collections.emptyList();
+        }
+        return employees.values().stream()
+                .filter(e -> e.getSalary() >= averageSalary)
+                .collect(Collectors.toList());
+    }
+
+    public Employee removeEmployee(int id) {
+        return employees.remove(id);
     }
 
 }
